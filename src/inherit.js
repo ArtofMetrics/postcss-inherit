@@ -19,7 +19,7 @@ function _isAtruleDescendant(node) {
     if (parent.type === 'atrule') {
       descended = parent.params;
     }
-    parent = parent.parent;
+    ({ parent } = parent);
   }
   return descended;
 }
@@ -83,8 +83,7 @@ function _replaceRegExp(val) {
  */
 function _replaceSelector(matchedSelector, val, selector) {
   return matchedSelector.replace(_replaceRegExp(val), (_, first, last) =>
-    first + selector + last
-  );
+    first + selector + last);
 }
 /**
  * Private: turns a portion of a selector into a placeholder (adding a %)
@@ -96,8 +95,7 @@ function _replaceSelector(matchedSelector, val, selector) {
  */
 function _makePlaceholder(selector, value) {
   return selector.replace(_replaceRegExp(value), (_, first, last) =>
-    `${first}%${_.trim()}${last}`
-  );
+    `${first}%${_.trim()}${last}`);
 }
 /**
  * Private: splits selectors divided by a comma
@@ -143,7 +141,7 @@ function _removeParentsIfEmpty(node) {
   let currentNode = node.parent;
   node.remove();
   while (!currentNode.nodes.length) {
-    const parent = currentNode.parent;
+    const { parent } = currentNode;
     currentNode.remove();
     currentNode = parent;
   }
@@ -178,7 +176,6 @@ function _cleanParams(paramStr) {
  *  Private: copies rule from one location to another.
  *  Used to copy rules from root that match inherit value in a PostCSS AtRule.
  *  Rule copied before the rule that contains the inherit declaration.
- *  Does not return a value, but it transforms the PostCSS AST.
  *
  *  * `originRule` {Object} PostCSS Rule (in the atRule) that contains inherit declaration
  *  * `targetRule` {Object} PostCSS Rule (in root) that matches inherit property
@@ -187,7 +184,7 @@ function _cleanParams(paramStr) {
  */
 function _copyRule(originRule, targetRule) {
   const newRule = targetRule.cloneBefore();
-  newRule.moveBefore(originRule);
+  originRule.before(newRule);
   return newRule;
 }
 /**
@@ -204,8 +201,7 @@ function _appendSelector(originSelector, targetRule, value) {
   let targetRuleSelectors = _parseSelectors(targetRule.selector);
   targetRuleSelectors.forEach((targetRuleSelector) => {
     [].push.apply(targetRuleSelectors, originSelectors.map(newOriginSelector =>
-      _replaceSelector(targetRuleSelector, value, newOriginSelector)
-    ));
+      _replaceSelector(targetRuleSelector, value, newOriginSelector)));
   });
   // removes duplicate selectors
   targetRuleSelectors = [...new Set(targetRuleSelectors)];
@@ -343,8 +339,7 @@ export default class Inherit {
     this.root.walkRules(/^%|\s+%|\w%\w/, (rule) => {
       const selectors = _parseSelectors(rule.selector);
       const newSelectors = selectors.filter(selector =>
-        (selector.indexOf('%') === -1)
-      );
+        (selector.indexOf('%') === -1));
       if (!newSelectors.length) {
         rule.remove();
       } else {
